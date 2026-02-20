@@ -64,6 +64,21 @@ export async function constructHeaders(headersInit?: HeadersInit | undefined) {
 function pgMetaGuard(request: Request) {
   // Only check for /platform/pg-meta/ endpoints
   if (request.url.includes('/platform/pg-meta/')) {
+    const encryptedConnectionString = request.headers.get('x-connection-encrypted')
+
+    // Self-hosted endpoints can use pg-meta's configured DB connection details.
+    // Drop empty/invalid header values so pg-meta doesn't try to decrypt garbage.
+    if (!IS_PLATFORM) {
+      const sanitizedConnectionString = encryptedConnectionString?.trim()
+      if (
+        !sanitizedConnectionString ||
+        sanitizedConnectionString === 'undefined' ||
+        sanitizedConnectionString === 'null'
+      ) {
+        request.headers.delete('x-connection-encrypted')
+      }
+    }
+
     // If there is no valid `x-connection-encrypted`, pg-meta will necesseraly fail to connect to the target database
     // in such case, we save the hops and throw a 421 response instead
     if (!isValidConnString(request.headers.get('x-connection-encrypted'))) {

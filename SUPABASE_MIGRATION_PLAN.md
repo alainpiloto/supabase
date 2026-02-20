@@ -9,6 +9,14 @@ Este documento describe la estrategia paso a paso para migrar la dependencia bac
 4. Implementar soporte de concurrencia de entornos (`USE_SUPABASE="true"`).
 5. Implementar RLS (Row Level Security) e integridad referencial estricta, según las [Supabase Postgres Best Practices].
 
+## ✅ Estado Actual (2026-02-20)
+- [x] Hito 1: Setup, dependencias, variables de entorno y singleton de cliente Supabase.
+- [x] Hito 2: DDL base + migración incremental de alineación aplicada en entorno local Docker.
+- [ ] Hito 3: Adaptadores de lectura (pendiente de validación integral/QA funcional).
+- [ ] Hito 4: Adaptadores transaccionales (pendiente de validación integral/QA funcional).
+- [ ] Hito 5: Feature flag dual en todos los endpoints y pruebas de regresión completas.
+- [ ] Hito 6: Observabilidad/diagnóstico y endurecimiento final para operación.
+
 ---
 
 ## 🏗 Fases de Implementación (Hitos)

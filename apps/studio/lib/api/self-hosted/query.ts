@@ -10,6 +10,44 @@ export type QueryOptions = {
   headers?: HeadersInit
 }
 
+function toNonEmptyString(value: unknown): string | undefined {
+  if (typeof value === 'string' && value.trim().length > 0) return value
+  return undefined
+}
+
+function stringifyErrorPayload(value: unknown): string | undefined {
+  if (value === null || value === undefined) return undefined
+  if (typeof value === 'string') return value
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return String(value)
+  }
+}
+
+function normalizePgMetaErrorPayload(result: unknown, response: Response) {
+  const parsed = databaseErrorSchema.safeParse(result)
+  if (parsed.success) return parsed.data
+
+  const payload = result as Record<string, unknown> | null
+  const message =
+    toNonEmptyString(payload?.message) ??
+    toNonEmptyString(payload?.error) ??
+    toNonEmptyString(payload?.msg) ??
+    toNonEmptyString(response.statusText) ??
+    `Request failed with status ${response.status}`
+
+  const formattedError =
+    toNonEmptyString(payload?.formattedError) ?? stringifyErrorPayload(result) ?? message
+
+  const code =
+    toNonEmptyString(payload?.code) ??
+    (typeof payload?.code === 'number' ? String(payload.code) : undefined) ??
+    String(response.status)
+
+  return { message, code, formattedError }
+}
+
 /**
  * Executes a SQL query against the self-hosted Postgres instance via pg-meta service.
  *
@@ -45,7 +83,7 @@ export async function executeQuery<T = unknown>({
     const result = await response.json()
 
     if (!response.ok) {
-      const { message, code, formattedError } = databaseErrorSchema.parse(result)
+      const { message, code, formattedError } = normalizePgMetaErrorPayload(result, response)
       const error = new PgMetaDatabaseError(message, code, response.status, formattedError)
       return { data: undefined, error }
     }

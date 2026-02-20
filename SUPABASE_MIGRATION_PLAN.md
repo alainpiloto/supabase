@@ -12,7 +12,7 @@ Este documento describe la estrategia paso a paso para migrar la dependencia bac
 ## ✅ Estado Actual (2026-02-20)
 - [x] Hito 1: Setup, dependencias, variables de entorno y singleton de cliente Supabase.
 - [x] Hito 2: DDL base + migración incremental de alineación aplicada en entorno local Docker.
-- [ ] Hito 3: Adaptadores de lectura (pendiente de validación integral/QA funcional).
+- [x] Hito 3: Adaptadores de lectura implementados y validados en rutas con branch Strapi/Supabase.
 - [ ] Hito 4: Adaptadores transaccionales (pendiente de validación integral/QA funcional).
 - [ ] Hito 5: Feature flag dual en todos los endpoints y pruebas de regresión completas.
 - [ ] Hito 6: Observabilidad/diagnóstico y endurecimiento final para operación.

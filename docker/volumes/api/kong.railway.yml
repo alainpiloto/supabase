@@ -1,0 +1,197 @@
+_format_version: "2.1"
+_transform: true
+
+###
+### Consumers / Users
+###
+consumers:
+  - username: anon
+    keyauth_credentials:
+      - key: $SUPABASE_ANON_KEY
+  - username: service_role
+    keyauth_credentials:
+      - key: $SUPABASE_SERVICE_KEY
+
+###
+### Access Control List
+###
+acls:
+  - consumer: anon
+    group: anon
+  - consumer: service_role
+    group: admin
+
+###
+### API Routes (Railway)
+### Upstream env vars expected:
+### - AUTH_UPSTREAM        ex: supabase-auth.railway.internal:9999
+### - REST_UPSTREAM        ex: supabase-rest.railway.internal:3000
+### - STORAGE_UPSTREAM     ex: supabase-storage.railway.internal:5000
+### - REALTIME_UPSTREAM    ex: supabase-realtime.railway.internal:4000
+###
+services:
+  ## Open Auth routes
+  - name: auth-v1-open
+    url: "http://${AUTH_UPSTREAM}/verify"
+    routes:
+      - name: auth-v1-open
+        strip_path: true
+        paths:
+          - /auth/v1/verify
+    plugins:
+      - name: cors
+
+  - name: auth-v1-open-callback
+    url: "http://${AUTH_UPSTREAM}/callback"
+    routes:
+      - name: auth-v1-open-callback
+        strip_path: true
+        paths:
+          - /auth/v1/callback
+    plugins:
+      - name: cors
+
+  - name: auth-v1-open-authorize
+    url: "http://${AUTH_UPSTREAM}/authorize"
+    routes:
+      - name: auth-v1-open-authorize
+        strip_path: true
+        paths:
+          - /auth/v1/authorize
+    plugins:
+      - name: cors
+
+  ## Secure Auth routes
+  - name: auth-v1
+    _comment: "GoTrue: /auth/v1/* -> auth"
+    url: "http://${AUTH_UPSTREAM}/"
+    routes:
+      - name: auth-v1-all
+        strip_path: true
+        paths:
+          - /auth/v1/
+    plugins:
+      - name: cors
+      - name: key-auth
+        config:
+          hide_credentials: false
+      - name: acl
+        config:
+          hide_groups_header: true
+          allow:
+            - admin
+            - anon
+
+  ## Secure REST routes
+  - name: rest-v1
+    _comment: "PostgREST: /rest/v1/* -> rest"
+    url: "http://${REST_UPSTREAM}/"
+    routes:
+      - name: rest-v1-all
+        strip_path: true
+        paths:
+          - /rest/v1/
+    plugins:
+      - name: cors
+      - name: key-auth
+        config:
+          hide_credentials: true
+      - name: acl
+        config:
+          hide_groups_header: true
+          allow:
+            - admin
+            - anon
+
+  ## Secure GraphQL routes
+  - name: graphql-v1
+    _comment: "GraphQL: /graphql/v1 -> rest rpc/graphql"
+    url: "http://${REST_UPSTREAM}/rpc/graphql"
+    routes:
+      - name: graphql-v1-all
+        strip_path: true
+        paths:
+          - /graphql/v1
+    plugins:
+      - name: cors
+      - name: key-auth
+        config:
+          hide_credentials: true
+      - name: request-transformer
+        config:
+          add:
+            headers:
+              - Content-Profile:graphql_public
+      - name: acl
+        config:
+          hide_groups_header: true
+          allow:
+            - admin
+            - anon
+
+  ## Secure Realtime routes
+  - name: realtime-v1-ws
+    _comment: "Realtime websocket"
+    url: "http://${REALTIME_UPSTREAM}/socket"
+    protocol: ws
+    routes:
+      - name: realtime-v1-ws
+        strip_path: true
+        paths:
+          - /realtime/v1/
+    plugins:
+      - name: cors
+      - name: key-auth
+        config:
+          hide_credentials: false
+      - name: acl
+        config:
+          hide_groups_header: true
+          allow:
+            - admin
+            - anon
+
+  - name: realtime-v1-rest
+    _comment: "Realtime rest api"
+    url: "http://${REALTIME_UPSTREAM}/api"
+    protocol: http
+    routes:
+      - name: realtime-v1-rest
+        strip_path: true
+        paths:
+          - /realtime/v1/api
+    plugins:
+      - name: cors
+      - name: key-auth
+        config:
+          hide_credentials: false
+      - name: acl
+        config:
+          hide_groups_header: true
+          allow:
+            - admin
+            - anon
+
+  ## Storage routes (Storage handles its own auth)
+  - name: storage-v1
+    _comment: "Storage: /storage/v1/* -> storage"
+    url: "http://${STORAGE_UPSTREAM}/"
+    routes:
+      - name: storage-v1-all
+        strip_path: true
+        paths:
+          - /storage/v1/
+    plugins:
+      - name: cors
+
+  ## Optional Edge Functions route
+  # - name: functions-v1
+  #   _comment: "Edge Functions: /functions/v1/* -> functions"
+  #   url: "http://${FUNCTIONS_UPSTREAM}/"
+  #   routes:
+  #     - name: functions-v1-all
+  #       strip_path: true
+  #       paths:
+  #         - /functions/v1/
+  #   plugins:
+  #     - name: cors

@@ -5,6 +5,7 @@ _transform: true
 ### Consumers / Users
 ###
 consumers:
+  - username: DASHBOARD
   - username: anon
     keyauth_credentials:
       - key: ${SUPABASE_ANON_KEY}
@@ -22,12 +23,21 @@ acls:
     group: admin
 
 ###
+### Dashboard credentials
+###
+basicauth_credentials:
+  - consumer: DASHBOARD
+    username: ${DASHBOARD_USERNAME}
+    password: ${DASHBOARD_PASSWORD}
+
+###
 ### API Routes (Railway)
 ### Upstream env vars expected:
 ### - AUTH_UPSTREAM        ex: supabase-auth.railway.internal:9999
 ### - REST_UPSTREAM        ex: supabase-rest.railway.internal:3000
 ### - STORAGE_UPSTREAM     ex: supabase-storage.railway.internal:8080
 ### - REALTIME_UPSTREAM    ex: supabase-realtime.railway.internal:4000
+### - STUDIO_UPSTREAM      ex: supabase-studio.railway.internal:8080
 ###
 services:
   ## Open Auth routes
@@ -195,3 +205,18 @@ services:
   #         - /functions/v1/
   #   plugins:
   #     - name: cors
+
+  ## Dashboard route (must remain last so API-specific prefixes resolve first)
+  - name: dashboard-v1
+    _comment: "Studio dashboard: /* -> studio"
+    url: "http://${STUDIO_UPSTREAM}/"
+    routes:
+      - name: dashboard-v1-all
+        strip_path: false
+        paths:
+          - /
+    plugins:
+      - name: cors
+      - name: basic-auth
+        config:
+          hide_credentials: true

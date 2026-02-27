@@ -104,8 +104,14 @@ Basado en `docker/volumes/api/kong.yml`, reemplaza upstreams:
 - `http://rest:3000` -> `http://$REST_UPSTREAM`
 - `http://storage:5000` -> `http://$STORAGE_UPSTREAM`
 - `http://realtime-dev.supabase-realtime:4000` -> `http://$REALTIME_UPSTREAM`
+- `http://studio:3000` -> `http://$STUDIO_UPSTREAM` (en Railway suele ser `:8080`)
 
 Si no desplegaras Studio/Meta, elimina o comenta rutas `dashboard`, `meta`, `mcp`.
+
+Importante:
+
+- `DASHBOARD_USERNAME` y `DASHBOARD_PASSWORD` solo protegen Studio cuando Studio se expone detras de Kong con ruta `/*` + plugin `basic-auth`.
+- Si publicas `supabase-studio` directamente en Railway, esas credenciales no aplican a ese dominio directo.
 
 ### 5.2 Dockerfile para Kong
 
@@ -297,8 +303,14 @@ Variables:
 - `REST_UPSTREAM=<REST_PRIVATE_HOST>:3000`
 - `STORAGE_UPSTREAM=<STORAGE_PRIVATE_HOST>:5000`
 - `REALTIME_UPSTREAM=<REALTIME_PRIVATE_HOST>:4000`
+- `STUDIO_UPSTREAM=<STUDIO_PRIVATE_HOST>:8080`
 
 Expone puerto `8000` y asigna dominio publico final.
+
+Para modo seguro recomendado:
+
+- No expongas dominio publico de `supabase-studio`.
+- Accede a Studio via dominio publico de `supabase-kong` (ruta `/*`) con Basic Auth.
 
 ---
 
@@ -432,4 +444,3 @@ Verificar:
 3. Versiona tus migraciones SQL en git.
 4. No expongas `SERVICE_ROLE_KEY` a cliente.
 5. Documenta y rota secretos periodicamente.
-
